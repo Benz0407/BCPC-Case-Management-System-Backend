@@ -1,12 +1,16 @@
 package com.bcpc.cms.service.account;
 
+import java.util.HashMap;
+
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.bcpc.cms.dto.AccountDTO;
 import com.bcpc.cms.entity.account.Account;
 import com.bcpc.cms.enums.AccountType;
+import com.bcpc.cms.exception.ResourceNotFoundException;
 import com.bcpc.cms.repository.account.AccountRepository;
 
 @Service
@@ -46,6 +50,36 @@ public class AccountAuthService {
         } catch (Exception e) {
             response.setStatusCode(500);
             response.setError(e.getMessage());
+        }
+
+        return response;
+    }
+
+    public AccountDTO login(AccountDTO loginRequest) {
+
+        AccountDTO response = new AccountDTO();
+
+        try {
+            authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(loginRequest.getAccountId(),
+                            loginRequest.getPassword()));
+            Account account = accountRepository.findById(loginRequest.getAccountId())
+                    .orElseThrow(() -> new ResourceNotFoundException(
+                            "Account not found with id: " + loginRequest.getAccountId()));
+            String token = jwtUtils.generateToken(account);
+            String refreshToken = jwtUtils.generateRefreshToken(new HashMap<>(), account);
+
+            response.setStatusCode(200);
+            response.setToken(token);
+            response.setRole(account.getRole().toString());
+            response.setRefreshToken(refreshToken);
+            response.setAccountId(account.getAccountId());
+            response.setExpirationTime("6Hrs");
+            response.setMessage("Login successful!");
+
+        } catch (Exception e) {
+            response.setStatusCode(500);
+            response.setMessage(e.getMessage());
         }
 
         return response;
