@@ -8,6 +8,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.bcpc.cms.dto.AccountDTO;
+import com.bcpc.cms.dto.LoginRequestDTO;
 import com.bcpc.cms.entity.account.Account;
 import com.bcpc.cms.enums.AccountType;
 import com.bcpc.cms.exception.ResourceNotFoundException;
@@ -55,17 +56,17 @@ public class AccountAuthService {
         return response;
     }
 
-    public AccountDTO login(AccountDTO loginRequest) {
+    public AccountDTO login(LoginRequestDTO loginRequest) {
 
         AccountDTO response = new AccountDTO();
 
         try {
             authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(loginRequest.getAccountId(),
+                    new UsernamePasswordAuthenticationToken(loginRequest.getUsername(),
                             loginRequest.getPassword()));
-            Account account = accountRepository.findById(loginRequest.getAccountId())
-                    .orElseThrow(() -> new ResourceNotFoundException(
-                            "Account not found with id: " + loginRequest.getAccountId()));
+            Account account = accountRepository.findByUsername(loginRequest.getUsername()).orElseThrow(
+                    () -> new ResourceNotFoundException(
+                            "Account not found with username: " + loginRequest.getUsername()));
             String token = jwtUtils.generateToken(account);
             String refreshToken = jwtUtils.generateRefreshToken(new HashMap<>(), account);
 
@@ -76,6 +77,7 @@ public class AccountAuthService {
             response.setAccountId(account.getAccountId());
             response.setExpirationTime("6Hrs");
             response.setMessage("Login successful!");
+            response.setEnabled(account.isEnabled());
 
         } catch (Exception e) {
             response.setStatusCode(500);

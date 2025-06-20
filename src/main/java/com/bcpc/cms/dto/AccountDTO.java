@@ -1,7 +1,6 @@
 package com.bcpc.cms.dto;
 
 import com.bcpc.cms.entity.account.Account;
-import com.bcpc.cms.enums.AccountType;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
